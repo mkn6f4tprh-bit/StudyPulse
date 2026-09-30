@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>StudyPulse</title>
+    <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;StudyPulse&quot;,&quot;short_name&quot;:&quot;StudyPulse&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#0f172a&quot;,&quot;theme_color&quot;:&quot;#6366f1&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;https://fav.farm/📚&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/png&quot;}]}">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .flip-card { perspective: 1000px; }
+        .flip-card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { backface-visibility: hidden; position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .flip-card-back { transform: rotateY(180deg); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased pb-20">
+    <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 p-4">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-graduation-cap text-lg"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">StudyPulse</h1>
+            </div>
+            <button id="btnApiKey" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-key text-indigo-400"></i> API Key
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-md w-full mx-auto p-4 space-y-6">
+        <section id="secHome" class="space-y-4">
+            <div class="text-center py-4 space-y-2">
+                <h2 class="text-2xl font-extrabold text-white">¿Qué vas a aprender hoy?</h2>
+                <p class="text-xs text-slate-400">Ingresa un tema y generaremos los mejores puntos de estudio.</p>
+            </div>
+
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3 shadow-xl">
+                <input type="text" id="topicInput" placeholder="Ej: Fotosíntesis, Segunda Guerra Mundial..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+                
+                <div class="flex gap-2">
+                    <button class="mode-btn flex-1 py-2 text-xs rounded-xl font-medium border border-slate-800 bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-mode="completo">
+                        <i class="fa-solid fa-book-open mr-1 text-indigo-400"></i> Completo
+                    </button>
+                    <button class="mode-btn flex-1 py-2 text-xs rounded-xl font-medium border border-slate-800 bg-slate-950 text-slate-400 hover:bg-slate-800 transition" data-mode="facil">
+                        <i class="fa-solid fa-lightbulb mr-1 text-amber-400"></i> Fácil
+                    </button>
+                    <button class="mode-btn flex-1 py-2 text-xs rounded-xl font-medium border border-slate-800 bg-slate-950 text-slate-400 hover:bg-slate-800 transition" data-mode="express">
+                        <i class="fa-solid fa-bolt mr-1 text-emerald-400"></i> Express
+                    </button>
+                </div>
+
+                <button id="btnGenerate" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generar Guía de Estudio
+                </button>
+            </div>
+        </section>
+
+        <section id="secResult" class="hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 id="resTopicTitle" class="text-xl font-bold text-white capitalize"></h3>
+                <button id="btnSave" class="text-xs bg-slate-800 hover:bg-slate-700 text-indigo-400 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                    <i class="fa-regular fa-bookmark"></i> Guardar
+                </button>
+            </div>
+
+            <div class="flex border-b border-slate-800 text-sm">
+                <button class="tab-btn flex-1 py-2 text-center text-indigo-400 border-b-2 border-indigo-500 font-medium" data-tab="resumen">Resumen</button>
+                <button class="tab-btn flex-1 py-2 text-center text-slate-400 font-medium" data-tab="cards">Fichas</button>
+                <button class="tab-btn flex-1 py-2 text-center text-slate-400 font-medium" data-tab="quiz">Quiz</button>
+            </div>
+
+            <div id="tabResumen" class="tab-content space-y-3">
+                <div id="summaryContent" class="space-y-3 text-sm text-slate-300"></div>
+            </div>
+
+            <div id="tabCards" class="tab-content hidden space-y-4">
+                <div id="cardContainer" class="flip-card w-full h-52 cursor-pointer">
+                    <div class="flip-card-inner w-full h-full relative rounded-2xl border border-slate-800 bg-slate-900 p-6 flex flex-col justify-between shadow-xl">
+                        <div class="flip-card-front flex flex-col justify-between p-6 bg-slate-900 rounded-2xl">
+                            <span class="text-xs text-indigo-400 font-bold uppercase tracking-wider">Pregunta</span>
+                            <p id="cardFront" class="text-base text-white text-center font-medium my-auto"></p>
+                            <span class="text-xs text-slate-500 text-center"><i class="fa-solid fa-rotate mr-1"></i>Toca para ver la respuesta</span>
+                        </div>
+                        <div class="flip-card-back flex flex-col justify-between p-6 bg-indigo-950/40 border border-indigo-500/30 rounded-2xl">
+                            <span class="text-xs text-purple-400 font-bold uppercase tracking-wider">Respuesta</span>
+                            <p id="cardBack" class="text-sm text-slate-200 text-center my-auto"></p>
+                            <span class="text-xs text-slate-500 text-center">Gira nuevamente</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center px-2">
+                    <button id="prevCard" class="px-3 py-1.5 bg-slate-800 rounded-lg text-xs text-slate-300">Anterior</button>
+                    <span id="cardTracker" class="text-xs text-slate-500">1 / 3</span>
+                    <button id="nextCard" class="px-3 py-1.5 bg-slate-800 rounded-lg text-xs text-slate-300">Siguiente</button>
+                </div>
+            </div>
+
+            <div id="tabQuiz" class="tab-content hidden space-y-4">
+                <div id="quizContainer" class="space-y-4"></div>
+            </div>
+        </section>
+
+        <section id="secLibrary" class="hidden space-y-4">
+            <h2 class="text-xl font-bold text-white">Mi Biblioteca</h2>
+            <div id="libraryList" class="space-y-3"></div>
+        </section>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-md border-t border-slate-800 z-40">
+        <div class="max-w-md mx-auto flex justify-around p-2">
+            <button class="nav-btn text-indigo-400 flex flex-col items-center gap-1 py-1 px-4" data-target="secHome">
+                <i class="fa-solid fa-house text-lg"></i>
+                <span class="text-[10px]">Inicio</span>
+            </button>
+            <button class="nav-btn text-slate-400 flex flex-col items-center gap-1 py-1 px-4" data-target="secLibrary">
+                <i class="fa-solid fa-book text-lg"></i>
+                <span class="text-[10px]">Biblioteca</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        let currentMode = 'completo';
+        let currentData = null;
+        let cardIdx = 0;
+        let apiKey = localStorage.getItem('sp_gemini_key') || '';
+
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => {
+                    b.classList.remove('bg-slate-800', 'text-slate-300');
+                    b.classList.add('bg-slate-950', 'text-slate-400');
+                });
+                btn.classList.add('bg-slate-800', 'text-slate-300');
+                currentMode = btn.dataset.mode;
+            });
+        });
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+                document.getElementById(btn.dataset.target).classList.remove('hidden');
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('text-indigo-400', 'text-slate-400'));
+                btn.classList.replace('text-slate-400', 'text-indigo-400');
+                if(btn.dataset.target === 'secLibrary') loadLibrary();
+            });
+        });
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('text-indigo-400', 'border-b-2', 'border-indigo-500');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('text-indigo-400', 'border-b-2', 'border-indigo-500');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                document.getElementById('tab' + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1)).classList.remove('hidden');
+            });
+        });
+
+        document.getElementById('cardContainer').addEventListener('click', () => {
+            document.getElementById('cardContainer').classList.toggle('flipped');
+        });
+
+        document.getElementById('btnApiKey').addEventListener('click', () => {
+            const key = prompt('Ingresa tu clave de API de Gemini (gratuita):', apiKey);
+            if(key !== null) {
+                apiKey = key.trim();
+                localStorage.setItem('sp_gemini_key', apiKey);
+            }
+        });
+
+        document.getElementById('btnGenerate').addEventListener('click', async () => {
+            const topic = document.getElementById('topicInput').value.trim();
+            if(!topic) return alert('Por favor ingresa un tema');
+
+            document.getElementById('btnGenerate').disabled = true;
+            document.getElementById('btnGenerate').innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Generando...`;
+
+            try {
+                if(apiKey) {
+                    currentData = await fetchFromGemini(topic, currentMode);
+                } else {
+                    currentData = generateMockData(topic, currentMode);
+                }
+                renderResult(topic, currentData);
+            } catch(e) {
+                alert('Error al generar: ' + e.message);
+            } finally {
+                document.getElementById('btnGenerate').disabled = false;
+                document.getElementById('btnGenerate').innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Generar Guía de Estudio`;
+            }
+        });
+
+        function renderResult(topic, data) {
+            document.getElementById('resTopicTitle').textContent = topic;
+            document.getElementById('secHome').classList.add('hidden');
+            document.getElementById('secResult').classList.remove('hidden');
+
+            const summaryHtml = data.resumen.map(item => `
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+                    <h4 class="font-semibold text-indigo-300 text-sm">${item.titulo}</h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">${item.detalle}</p>
+                </div>
+            `).join('');
+            document.getElementById('summaryContent').innerHTML = summaryHtml;
+
+            cardIdx = 0;
+            updateCard();
+
+            const quizHtml = data.quiz.map((q, i) => `
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <p class="text-sm font-medium text-white">${i+1}. ${q.pregunta}</p>
+                    <div class="space-y-2">
+                        ${q.opciones.map((op, optIdx) => `
+                            <button onclick="checkAnswer(this, ${optIdx === q.correcta})" class="w-full text-left p-3 rounded-lg text-xs bg-slate-950 border border-slate-800 text-slate-300 hover:border-indigo-500 transition">
+                                ${op}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('quizContainer').innerHTML = quizHtml;
+        }
+
+        function updateCard() {
+            if(!currentData || !currentData.fichas.length) return;
+            const card = currentData.fichas[cardIdx];
+            document.getElementById('cardContainer').classList.remove('flipped');
+            document.getElementById('cardFront').textContent = card.q;
+            document.getElementById('cardBack').textContent = card.a;
+            document.getElementById('cardTracker').textContent = `${cardIdx + 1} / ${currentData.fichas.length}`;
+        }
+
+        document.getElementById('nextCard').addEventListener('click', () => {
+            if(currentData && cardIdx < currentData.fichas.length - 1) {
+                cardIdx++;
+                updateCard();
+            }
+        });
+
+        document.getElementById('prevCard').addEventListener('click', () => {
+            if(currentData && cardIdx > 0) {
+                cardIdx--;
+                updateCard();
+            }
+        });
+
+        function checkAnswer(btn, isCorrect) {
+            const parent = btn.parentElement;
+            parent.querySelectorAll('button').forEach(b => b.disabled = true);
+            if(isCorrect) {
+                btn.classList.add('bg-emerald-950', 'border-emerald-500', 'text-emerald-300');
+            } else {
+                btn.classList.add('bg-rose-950', 'border-rose-500', 'text-rose-300');
+            }
+        }
+
+        document.getElementById('btnSave').addEventListener('click', () => {
+            const topic = document.getElementById('resTopicTitle').textContent;
+            let saved = JSON.parse(localStorage.getItem('sp_saved_topics') || '[]');
+            if(!saved.some(s => s.topic === topic)) {
+                saved.push({ topic, data: currentData, date: new Date().toLocaleDateString() });
+                localStorage.setItem('sp_saved_topics', JSON.stringify(saved));
+                alert('¡Tema guardado en tu biblioteca!');
+            } else {
+                alert('Este tema ya está en tu biblioteca.');
+            }
+        });
+
+        function loadLibrary() {
+            const saved = JSON.parse(localStorage.getItem('sp_saved_topics') || '[]');
+            const list = document.getElementById('libraryList');
+            if(saved.length === 0) {
+                list.innerHTML = `<p class="text-xs text-slate-500 text-center py-8">No tienes temas guardados aún.</p>`;
+                return;
+            }
+            list.innerHTML = saved.map((item, idx) => `
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
+                    <div>
+                        <h4 class="font-semibold text-white capitalize text-sm">${item.topic}</h4>
+                        <span class="text-[10px] text-slate-500">${item.date}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openSaved(${idx})" class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg">Estudiar</button>
+                        <button onclick="deleteSaved(${idx})" class="text-xs bg-slate-800 text-rose-400 px-2 py-1.5 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openSaved(idx) {
+            const saved = JSON.parse(localStorage.getItem('sp_saved_topics') || '[]');
+            const item = saved[idx];
+            currentData = item.data;
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            renderResult(item.topic, item.data);
+        }
+
+        function deleteSaved(idx) {
+            let saved = JSON.parse(localStorage.getItem('sp_saved_topics') || '[]');
+            saved.splice(idx, 1);
+            localStorage.setItem('sp_saved_topics', JSON.stringify(saved));
+            loadLibrary();
+        }
+
+        function generateMockData(topic, mode) {
+            return {
+                resumen: [
+                    { titulo: "Concepto Clave", detalle: `El tema ${topic} abarca conceptos fundamentales estructurados de forma metódica para facilitar el aprendizaje rápido.` },
+                    { titulo: "Mecanismo Principal", detalle: `Funciona a través de interacciones esenciales que definen la estructura principal de ${topic}.` },
+                    { titulo: "Aplicación Práctica", detalle: `Se utiliza principalmente para resolver problemas específicos y comprender fenómenos avanzados.` }
+                ],
+                fichas: [
+                    { q: `¿Qué es principalmente ${topic}?`, a: `Es un concepto estructurado fundamental para entender el área.` },
+                    { q: `¿Cuál es el objetivo de estudiar ${topic}?`, a: `Comprender sus componentes principales y aplicarlos en evaluaciones.` },
+                    { q: `¿Qué elemento no debes olvidar de ${topic}?`, a: `Los principios básicos que conectan cada una de sus partes.` }
+                ],
+                quiz: [
+                    { pregunta: `¿Cuál es el aspecto central de ${topic}?`, opciones: ["Principio de funcionamiento", "Elemento secundario", "Variable no relacionada"], correcta: 0 },
+                    { pregunta: `¿Cómo se aplica ${topic} en la práctica?`, opciones: ["Sin aplicación relevante", "Mediante análisis y estructura", "Únicamente en teoría"], correcta: 1 }
+                ]
+            };
+        }
+
+        async function fetchFromGemini(topic, mode) {
+            const prompt = `Genera un JSON estricto para estudiar el tema "${topic}" en modo "${mode}". Estructura JSON requerida: {"resumen": [{"titulo": "...", "detalle": "..."}], "fichas": [{"q": "...", "a": "..."}], "quiz": [{"pregunta": "...", "opciones": ["...", "..."], "correcta": 0}]}`;
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const json = await res.json();
+            const text = json.candidates[0].content.parts[0].text;
+            return JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
+        }
+    </script>
+</body>
+</html>
